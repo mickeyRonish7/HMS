@@ -1,0 +1,152 @@
+# Hostel Management System V2 - Project Overview
+
+## Project Name
+**Hostel Management System V2 (HMSV2)**
+
+## Description
+A comprehensive web-based hostel management system built with Laravel 12 and PHP 8.2. This system manages student accommodation, room assignments, visitor approvals, fees, complaints, attendance, feedback, and notices.
+
+## Technology Stack
+- **Backend Framework**: Laravel 12.44.0
+- **PHP Version**: 8.2.12
+- **Database**: MySQL
+- **Frontend**: Blade Templates, Tailwind CSS, Alpine.js
+- **Authentication**: Laravel Breeze
+- **PDF Generation**: DomPDF (for ID cards)
+- **Charts**: Chart.js (for analytics)
+
+## User Roles
+1. **Admin**: Full system access and management
+2. **Student**: Can browse rooms, request accommodation, view fees, submit complaints/feedback
+3. **Visitor**: Limited access, requires dual approval (student + admin)
+
+## Core Features
+
+### 1. User Management
+- Registration with role-based fields (student-specific fields for students)
+- Dual-approval system for visitors (both student and admin must approve)
+- Profile management with photo upload
+- Student ID card generation and management
+
+### 2. Room Management
+- Room creation with photos, type, capacity, amenities
+- Bed tracking (occupied/available status)
+- Room browsing with filtering (by type: Standard, Deluxe, etc.)
+- Room request system with approval workflow
+- Auto bed assignment when a request is approved
+
+### 3. Visitor Approval System
+- Two-tier approval: Student approval → Admin approval
+- Student can approve or reject with mandatory reason (10-500 chars)
+- Rejection tracking with reason history
+- Status badges (Approved ✓ / Rejected ✗ / Pending ⏳)
+
+### 4. Fee Management
+- Fee assignment to students
+- Payment tracking
+- Status monitoring (pending/paid)
+- Monthly collection summaries
+
+### 5. Complaints System
+- Students can submit complaints
+- Admin can view, update status, and respond
+- Status tracking (open/in-progress/resolved)
+
+### 6. Feedback System
+- Rating-based feedback (1-5 stars for multiple categories)
+- Admin analytics dashboard with charts
+- Satisfaction distribution tracking
+- Trend analysis
+
+### 7. Attendance System
+- Daily attendance marking
+- Exportable attendance records
+- Student-specific attendance history
+
+### 8. Notice Board
+- Admin can post notices
+- Audience targeting (all, students, visitors)
+- Display on respective dashboards
+
+### 9. Chatbot
+- AI-powered assistant for common queries
+- Context-aware responses
+
+## System Architecture
+
+### MVC Pattern
+- **Models**: Database table representations (User, Room, Bed, Fee, Complaint, etc.)
+- **Views**: Blade templates for UI
+- **Controllers**: Business logic handlers
+
+### Key Design Decisions
+1. **Dual Approval for Visitors**: Security measure ensuring both student consent and admin verification
+2. **Auto Bed Assignment**: Streamlines room allocation process
+3. **Role-Based Navigation**: Dynamic sidebar based on user role
+4. **Real-time Validation**: Alpine.js for client-side validation
+5. **Responsive Design**: Tailwind CSS for mobile-friendly interface
+6. **Dark Mode Support**: Theme toggle with user preference persistence
+
+## Database Schema Highlights
+- **users**: Stores all user types with role-based fields
+- **rooms**: Room definitions with photos and amenities
+- **beds**: Individual bed tracking within rooms
+- **room_requests**: Student room requests with approval workflow
+- **fees**: Fee assignments and payment tracking
+- **complaints**: Student complaints with responses
+- **feedback**: Rating-based feedback submissions
+- **notices**: Announcements with audience targeting
+- **attendance**: Daily attendance records
+
+## Security Features
+- CSRF protection on all forms
+- Role-based access control
+- Authentication middleware
+- Password hashing (bcrypt)
+- SQL injection prevention (Eloquent ORM)
+- XSS protection (Blade escaping)
+
+## File Structure
+```
+hostel-management-systemV2/
+├── app/
+│   ├── Http/Controllers/     # Business logic
+│   ├── Models/               # Database models
+│   └── Middleware/           # Custom middleware
+├── database/
+│   └── migrations/           # Database schema changes
+├── resources/
+│   └── views/                # Blade templates
+├── routes/
+│   ├── web.php              # Web routes
+│   └── console.php          # Artisan commands
+├── public/
+│   └── storage/             # Symlinked storage (images, files)
+└── storage/
+    └── app/public/          # User uploads
+```
+
+## Development Workflow
+1. **Local Development**: `php artisan serve` on port 8000
+2. **Database Migrations**: `php artisan migrate`
+3. **Storage Link**: `php artisan storage:link`
+4. **Cache Clearing**: `php artisan optimize:clear`
+
+## Recent Enhancements (This Session)
+1. ✅ Image visibility fixes (profile photos, room photos)
+2. ✅ Two-tier visitor approval system
+3. ✅ Room filtering for students
+4. ✅ Admin ID card management for students
+5. ✅ Feedback analytics error resolution
+6. ✅ Room request authorization (students only)
+7. ✅ Dynamic registration form (student/visitor fields)
+8. ✅ Visitor rejection with mandatory reason
+9. ✅ Visitor dashboard cleanup (removed duplicate link)
+10. ✅ Admin Visitor Request Management (Track all specific visits)
+11. ✅ Admin can edit/update visitor request form data
+12. ✅ Role-Based Access Control (Middleware & Form Requests)
+
+## Support & Maintenance
+- **Error Logging**: Laravel logs in `storage/logs/`
+- **Debugging**: Laravel Telescope (if installed)
+- **Testing**: PHPUnit test suite

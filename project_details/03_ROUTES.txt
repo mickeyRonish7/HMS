@@ -1,0 +1,292 @@
+# Routes Documentation - HMSV2
+
+## What are Routes?
+Routes define URL patterns and map them to controller methods. They act as the entry points to your application.
+
+## Location
+`routes/web.php`
+
+---
+
+## Route Structure
+```php
+Route::method('/url', [Controller::class, 'method'])->name('route.name');
+```
+
+---
+
+## Public Routes (No Authentication)
+
+### Authentication Routes
+- `GET /login` → `AuthController@showLoginForm` (name: login)
+- `POST /login` → `AuthController@login`
+- `POST /logout` → `AuthController@logout` (name: logout)
+- `GET /register` → `AuthController@showRegisterForm` (name: register)
+- `POST /register` → `AuthController@register`
+
+**Purpose**: User authentication workflow
+
+---
+
+## Authenticated Routes (Middleware: auth)
+
+### Dashboard Router
+- `GET /dashboard` → Redirects based on role:
+  - Admin → `admin.dashboard`
+  - Visitor → `visitor.dashboard`
+  - Student → `student.dashboard`
+
+---
+
+## Admin Routes (Middleware: auth, admin)
+**Prefix**: `/admin`
+**Name Prefix**: `admin.`
+
+### Dashboard & Users
+- `GET /admin/dashboard` → `AdminController@dashboard`
+- `GET /admin/users/pending` → `AdminController@pendingUsers`
+- `POST /admin/users/{user}/approve` → `AdminController@approveUser`
+- `DELETE /admin/users/{user}/reject` → `AdminController@rejectUser`
+
+### Students Management
+- `GET /admin/students` → `AdminController@students`
+- `GET /admin/students/{id}` → `AdminController@showStudentProfile`
+- `GET /admin/students/{id}/assign-room` → `AdminController@assignRoomForm`
+- `POST /admin/students/{id}/assign-room` → `AdminController@assignRoom`
+- `POST /admin/students/{id}/unassign-room` → `AdminController@unassignRoom`
+- `GET /admin/students/{id}/id-card` → `IDCardController@showStudentIDCard`
+- `GET /admin/students/{id}/id-card/edit` → `IDCardController@edit`
+- `PUT /admin/students/{id}/id-card` → `IDCardController@update`
+
+### Rooms Management (Resource Routes)
+- `GET /admin/rooms` → index (list all)
+- `GET /admin/rooms/create` → create (show form)
+- `POST /admin/rooms` → store (save new)
+- `GET /admin/rooms/{id}` → show (view details)
+- `GET /admin/rooms/{id}/edit` → edit (show edit form)
+- `PUT /admin/rooms/{id}` → update (save changes)
+- `DELETE /admin/rooms/{id}` → destroy (delete)
+
+### Room Requests
+- `GET /admin/room-requests` → `RoomController@showRequests`
+- `POST /admin/room-requests/{id}/approve` → `RoomController@approveRequest`
+- `POST /admin/room-requests/{id}/reject` → `RoomController@rejectRequest`
+
+### Feedback Management
+- `GET /admin/feedback` → index
+- `GET /admin/feedback/{id}` → show
+- `PUT /admin/feedback/{id}` → update status
+- `GET /admin/feedback/analytics` → `FeedbackController@analytics`
+
+### Notices (Resource)
+- Full CRUD for notices
+- Target audience: all/students/visitors
+
+### Other Admin Routes
+- Complaints (index, update)
+- Fees (full CRUD)
+- Attendance (index, store, export)
+- Visitors log (index, store, update)
+- Profile (view, update)
+
+---
+
+## Student Routes (Middleware: auth, student)
+**Prefix**: `/student`
+**Name Prefix**: `student.`
+
+### Dashboard & Profile
+- `GET /student/dashboard` → `StudentController@dashboard`
+- `GET /student/profile` → `StudentController@profile`
+- `POST /student/profile` → `StudentController@updateProfile`
+
+### Rooms
+- `GET /student/rooms/browse` → `RoomController@browse`
+- `GET /student/rooms/{id}` → `RoomController@show`
+- `POST /student/rooms/{id}/request` → `RoomController@requestRoom`
+- `GET /student/room-requests` → `RoomController@myRequests`
+- `GET /student/room` → `StudentController@room` (assigned room)
+
+### Visitor Approval
+- `GET /student/visitors/pending` → `StudentController@pendingVisitors`
+- `POST /student/visitors/{id}/approve` → `StudentController@approveVisitor`
+- `POST /student/visitors/{id}/reject` → `StudentController@rejectVisitor`
+
+### Other Student Routes
+- ID Card (show, download)
+- Fees (view own)
+- Complaints (create, view own)
+- Attendance (view own)
+
+---
+
+## Visitor Routes (Middleware: auth, visitor)
+**Prefix**: `/visitor`
+**Name Prefix**: `visitor.`
+
+- `GET /visitor/dashboard` → `VisitorDashboardController@dashboard`
+- `POST /visitor/request` → `VisitorDashboardController@requestVisit`
+
+---
+
+## Shared Routes (All Authenticated Users)
+
+### Feedback
+- `GET /feedback/create` → `FeedbackController@create`
+- `POST /feedback` → `FeedbackController@store`
+
+### Chatbot
+- `POST /chatbot/ask` → `ChatbotController@ask`
+
+### Theme & Preferences
+- `POST /theme/toggle` → `ThemeController@toggleTheme`
+- `POST /theme/font-size` → `ThemeController@changeFontSize`
+- `GET /locale/{locale}` → `ThemeController@changeLocale`
+
+### Notifications
+- `GET /notifications` → index
+- `POST /notifications/{id}/read` → markAsRead
+- `POST /notifications/read-all` → markAllAsRead
+- `DELETE /notifications/{id}` → destroy
+- `GET /notifications/unread-count` → unreadCount
+
+### Password Update
+- `POST /user/security/update-password` → `AuthController@updatePassword`
+
+---
+
+## Route Middleware
+
+### 1. web
+- Session handling
+- CSRF protection
+- Cookie encryption
+- Error handling
+
+### 2. auth
+- Must be logged in
+- Redirects to login if not
+
+### 3. Role Middleware (Custom)
+- `admin`: Only admins
+- `student`: Only students
+- `visitor`: Only visitors
+
+---
+
+## Route Naming Convention
+```
+{role}.{resource}.{action}
+
+Examples:
+- admin.students.index
+- student.rooms.browse
+- admin.feedback.analytics
+```
+
+**Why Important**:
+- Clean URLs
+- Easy to reference in views: `route('admin.students.index')`
+- Centralized route management
+- RESTful design
+
+---
+
+## Resource Routes
+Laravel's resource routes automatically create 7 RESTful routes:
+```php
+Route::resource('rooms', RoomController::class);
+```
+
+Creates:
+- GET /rooms → index
+- GET /rooms/create → create
+- POST /rooms → store
+- GET /rooms/{id} → show
+- GET /rooms/{id}/edit → edit
+- PUT/PATCH /rooms/{id} → update
+- DELETE /rooms/{id} → destroy
+
+**Limiting Resources**:
+```php
+->only(['index', 'show'])  // Only these actions
+->except(['destroy'])      // All except these
+```
+
+---
+
+## Route Parameters
+```php
+Route::get('/rooms/{id}', ...)
+Route::get('/users/{user}/profile', ...)
+```
+
+In controller:
+```php
+public function show($id) {
+    $room = Room::findOrFail($id);
+}
+```
+
+With route model binding:
+```php
+public function show(Room $room) {
+    // $room automatically loaded
+}
+```
+
+---
+
+## Route Groups
+Organize routes with shared attributes:
+```php
+Route::middleware(['auth', 'admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function() {
+        // All routes here are /admin/* 
+        // with admin. name prefix
+        // and auth+admin middleware
+    });
+```
+
+**Why Use Groups**:
+- DRY principle
+- Consistent structure
+- Easy to modify middleware/prefix for multiple routes
+
+---
+
+## Console Routes
+Located in `routes/console.php`
+
+### Artisan Commands
+- `php artisan inspire` - Display quote
+- Custom commands for testing/verification (temporary)
+
+**Purpose**: CLI tasks, scheduled jobs, maintenance
+
+---
+
+## API Routes (if applicable)
+Located in `routes/api.php`
+- Typically for mobile apps or SPAs
+- Returns JSON instead of views
+- Uses `api` middleware (stateless, token auth)
+
+---
+
+## Route Caching
+Production optimization:
+```bash
+php artisan route:cache   # Cache routes for speed
+php artisan route:clear   # Clear cache
+php artisan route:list    # View all routes
+```
+
+**Why Important**: 
+Routes are the traffic control of your application - they determine:
+- Who can access what
+- Which code handles each request
+- URL structure and organization
+- Security through middleware

@@ -1,0 +1,399 @@
+# Views Documentation - HMSV2
+
+## What are Views?
+Views are the presentation layer - the HTML/CSS/JavaScript that users see. Laravel uses Blade templating engine for views.
+
+## Location
+`resources/views/`
+
+---
+
+## Blade Templating
+
+### Layout System
+**Master Layout**: `layouts/app.blade.php`
+- Contains: Header, sidebar, footer
+- Dynamic sidebar based on user role
+- Theme toggle, font size controls
+- Notifications dropdown
+- Dark mode support
+
+**Content Injection**:
+```blade
+<x-app-layout>
+    <x-slot name="header">
+        Page Title
+    </x-slot>
+    
+    Page content here
+</x-app-layout>
+```
+
+---
+
+## View Directory Structure
+
+### Admin Views (`admin/`)
+- `dashboard.blade.php` - Admin homepage with stats
+- `students/`
+  - `index.blade.php` - Student list with room assignments
+  - `profile.blade.php` - Student details view
+  - `assign-room.blade.php` - Room assignment form
+  - `edit-id-card.blade.php` - ID card editor
+- `users/`
+  - `pending.blade.php` - Pending registrations with dual approval status
+- `rooms/`
+  - `index.blade.php` - Room list
+  - `create.blade.php` - Add new room
+  - `edit.blade.php` - Edit room
+  - `show.blade.php` - Room details
+- `room-requests/`
+  - `index.blade.php` - All room requests with approve/reject
+- `feedback/`
+  - `index.blade.php` - Feedback list
+  - `analytics.blade.php` - Charts and statistics
+  - `show.blade.php` - Single feedback
+- `complaints/`
+  - `index.blade.php` - Complaint management
+  - `show.blade.php` - Complaint details with response
+- `notices/`
+  - CRUD views for notices
+- `visitors/`
+  - `index.blade.php` - Visitor log
+- `profile.blade.php` - Admin profile editor
+
+### Student Views (`student/`)
+- `dashboard.blade.php` - Student homepage
+  - Assigned room card
+  - Academic info
+  - Due fees summary
+  - Recent notices
+- `rooms/`
+  - `browse.blade.php` - Available rooms grid with filtering
+  - `show.blade.php` - Room details with request button
+  - `my-requests.blade.php` - Student's room requests
+- `visitors/`
+  - `pending.blade.php` - Visitor approval interface
+    - Status badges (Approved/Rejected/Pending)
+    - Rejection modal with reason textarea
+    - Re-approval for rejected visitors
+- `room.blade.php` - Assigned room view
+- `fees.blade.php` - Fee history
+- `id-card.blade.php` - Printable ID card
+- `complaints/`
+  - `create.blade.php` - Submit complaint
+  - `index.blade.php` - View own complaints
+- `profile.blade.php` - Edit profile and photo
+
+### Visitor Views (`visitor/`)
+- `dashboard.blade.php` - Simple visitor homepage
+
+### Auth Views (`auth/`)
+- `login.blade.php` - Login form
+- `register.blade.php` - Registration with dynamic fields
+  - Alpine.js for show/hide student fields based on role
+  - Conditional validation
+
+### Feedback Views (`feedback/`)
+- `create.blade.php` - Rating form (shared by all students)
+
+### Layouts (`layouts/`)
+- `app.blade.php` - Main application layout
+  - Role-based sidebar navigation
+  - Dark mode toggle
+  - Font size controls
+  - Profile dropdown
+  - Notification bell
+
+### Components (`components/`)
+Reusable Blade components (if any):
+- Alert messages
+- Buttons
+- Form inputs
+- Cards
+
+---
+
+## Blade Syntax
+
+### Output Data
+```blade
+{{ $variable }}           // Escaped (safe)
+{!! $html !!}            // Unescaped (dangerous)
+{{ $user->name }}        // Object properties
+```
+
+### Control Structures
+```blade
+@if($condition)
+    Content
+@elseif($other)
+    Other
+@else
+    Default
+@endif
+
+@foreach($items as $item)
+    {{ $item->name }}
+@endforeach
+
+@forelse($items as $item)
+    {{ $item }}
+@empty
+    No items
+@endforelse
+```
+
+### PHP Blocks
+```blade
+@php
+    $total = $price * $quantity;
+@endphp
+```
+
+### Include Other Views
+```blade
+@include('partials.alert')
+@include('partials.form', ['data' => $data])
+```
+
+### Authentication Checks
+```blade
+@auth
+    You are logged in
+@endauth
+
+@guest
+    Please login
+@endguest
+
+@if(Auth::user()->role === 'admin')
+    Admin content
+@endif
+```
+
+### CSRF Protection
+```blade
+<form method="POST">
+    @csrf    <!-- Required for POST/PUT/DELETE -->
+</form>
+```
+
+### Old Input (After Validation Errors)
+```blade
+<input value="{{ old('name', $user->name) }}">
+```
+
+### Error Display
+```blade
+@if($errors->any())
+    <div class="alert alert-danger">
+        @foreach($errors->all() as $error)
+            {{ $error }}
+        @endforeach
+    </div>
+@endif
+
+@error('email')
+    <span class="error">{{ $message }}</span>
+@enderror
+```
+
+### Session Flash Messages
+```blade
+@if(session('success'))
+    <div class="alert alert-success">
+        {{ session('success') }}
+    </div>
+@endif
+```
+
+### Asset URLs
+```blade
+<img src="{{ asset('storage/photos/room.jpg') }}">
+<link href="{{ asset('css/app.css') }}">
+```
+
+### Route URLs
+```blade
+<a href="{{ route('admin.students.index') }}">Students</a>
+<form action="{{ route('student.visitors.approve', $visitor->id) }}" method="POST">
+```
+
+---
+
+## Alpine.js Integration
+
+Used for client-side interactivity without page reload.
+
+### Example: Modal
+```blade
+<div x-data="{ open: false }">
+    <button @click="open = true">Open Modal</button>
+    
+    <div x-show="open" @click.away="open = false">
+        Modal content
+        <button @click="open = false">Close</button>
+    </div>
+</div>
+```
+
+### Example: Form Validation
+```blade
+<div x-data="{ charCount: 0 }">
+    <textarea 
+        x-model="rejectionReason"
+        @input="charCount = rejectionReason.length"
+        maxlength="500"
+    ></textarea>
+    <p x-text="`${charCount}/500`"></p>
+</div>
+```
+
+### Dynamic Classes
+```blade
+<button :class="charCount < 10 ? 'opacity-50' : 'opacity-100'">
+```
+
+### Teleport (Modals)
+```blade
+<template x-teleport="body">
+    <div x-show="showModal">
+        Modal always at body level
+    </div>
+</template>
+```
+
+---
+
+## Tailwind CSS Classes
+
+### Common Patterns
+
+**Container:**
+```
+max-w-7xl mx-auto sm:px-6 lg:px-8
+```
+
+**Card:**
+```
+bg-white dark:bg-gray-800 rounded-xl shadow-md p-6
+```
+
+**Button:**
+```
+px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700
+```
+
+**Input:**
+```
+w-full px-3 py-2 border border-gray-300 rounded-md 
+focus:outline-none focus:ring-2 focus:ring-blue-500
+```
+
+**Badge:**
+```
+px-2 inline-flex text-xs leading-5 font-semibold 
+rounded-full bg-green-100 text-green-800
+```
+
+**Dark Mode:**
+```
+text-gray-900 dark:text-white
+bg-white dark:bg-gray-800
+```
+
+---
+
+## Chart.js Integration
+
+Used in `admin/feedback/analytics.blade.php`
+
+```blade
+<canvas id="ratingsChart"></canvas>
+
+<script>
+new Chart(document.getElementById('ratingsChart'), {
+    type: 'bar',
+    data: {
+        labels: ['Cleanliness', 'Food', 'Staff'],
+        datasets: [{
+            label: 'Average Rating',
+            data: [{{ $averageRatings['cleanliness'] }}, ...]
+        }]
+    }
+});
+</script>
+```
+
+---
+
+## Common View Patterns
+
+### List with Empty State
+```blade
+@forelse($items as $item)
+    <div>{{ $item->name }}</div>
+@empty
+    <p>No items found.</p>
+@endforelse
+```
+
+### Table
+```blade
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach($users as $user)
+        <tr>
+            <td>{{ $user->name }}</td>
+            <td>{{ $user->email }}</td>
+        </tr>
+        @endforeach
+    </tbody>
+</table>
+```
+
+### Form with Validation
+```blade
+<form method="POST" action="{{ route('submit') }}">
+    @csrf
+    
+    <input name="email" value="{{ old('email') }}">
+    @error('email')
+        <span class="error">{{ $message }}</span>
+    @enderror
+    
+    <button type="submit">Submit</button>
+</form>
+```
+
+### Conditional Buttons
+```blade
+@if($request->status === 'pending')
+    <button>Approve</button>
+    <button>Reject</button>
+@else
+    <span>{{ ucfirst($request->status) }}</span>
+@endif
+```
+
+---
+
+## View Best Practices
+
+1. **Keep Logic Minimal**: Complex logic belongs in controllers
+2. **Reuse Layouts**: DRY principle with master layouts
+3. **Escape Output**: Always use {{ }} unless you explicitly need {!! !!}
+4. **Consistent Styling**: Use Tailwind utility classes
+5. **Accessibility**: Proper alt text, ARIA labels, semantic HTML
+6. **Responsive Design**: Mobile-first with Tailwind breakpoints
+7. **Loading States**: Show spinners for async operations
+8. **Error Handling**: Display user-friendly error messages
+
+**Why Important**: Views are what users interact with - good UX depends on clean, accessible, responsive views.

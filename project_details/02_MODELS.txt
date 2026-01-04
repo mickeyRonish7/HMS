@@ -1,0 +1,285 @@
+# Models Documentation - HMSV2
+
+## What are Models?
+Models represent database tables and define relationships between data. They use Laravel's Eloquent ORM for database interactions.
+
+## Location
+`app/Models/`
+
+---
+
+## 1. User.php
+**Table**: `users`
+
+### Fillable Fields:
+- `name`: User's full name
+- `email`: Login email (unique)
+- `password`: Hashed password
+- `role`: User type (admin/student/visitor)
+- `phone`: Contact number
+- `parent_phone`: Parent's contact (students only)
+- `address`: Residential address
+- `year`, `department`, `semester`: Academic info (students only)
+- `is_approved`: Traditional approval flag (students)
+- `student_approved`: Student approval for visitors
+- `admin_approved`: Admin approval for visitors
+- `rejection_reason`: Why visitor was rejected
+- `rejected_by`: Who rejected (student/admin)
+- `profile_photo_path`: Path to profile picture
+- `bed_id`: Assigned bed reference
+- `student_id_number`: ID card number
+- `locale`, `theme`, `font_size`: User preferences
+- `id_card_issued_date`, `id_card_expiry_date`
+- `blood_group`, `emergency_contact`, `emergency_contact_name`
+
+### Relationships:
+- `bed()`: belongsTo Bed
+- `fees()`: hasMany Fee
+- `complaints()`: hasMany Complaint
+- `roomRequests()`: hasMany RoomRequest
+- `feedback()`: hasMany Feedback
+- `attendance()`: hasMany Attendance
+
+### Hidden Fields:
+- `password`, `remember_token`
+
+### Casts:
+- `email_verified_at`: datetime
+- `password`: hashed
+
+**Why Important**: Central model for all user types with role-based attributes
+
+---
+
+## 2. Room.php
+**Table**: `rooms`
+
+### Fillable Fields:
+- `room_number`: Unique room identifier
+- `type`: Room category (Standard, Deluxe, VIP)
+- `capacity`: Maximum occupants
+- `floor`: Floor number
+- `block`: Building block
+- `rent`: Monthly rent amount
+- `status`: available/occupied/maintenance
+- `description`: Room details
+- `photo_path`: Room image
+- `amenities`: JSON array of facilities
+
+### Relationships:
+- `beds()`: hasMany Bed
+- `roomRequests()`: hasMany RoomRequest
+
+### Methods:
+- `getAvailableBedsCount()`: Count unoccupied beds
+- `isFullyOccupied()`: Check if all beds taken
+
+**Why Important**: Inventory management for accommodations
+
+---
+
+## 3. Bed.php
+**Table**: `beds`
+
+### Fillable Fields:
+- `room_id`: Parent room
+- `bed_number`: Identifier within room
+- `is_occupied`: Boolean status
+
+### Relationships:
+- `room()`: belongsTo Room
+- `user()`: hasOne User
+
+**Why Important**: Granular tracking of bed availability
+
+---
+
+## 4. RoomRequest.php
+**Table**: `room_requests`
+
+### Fillable Fields:
+- `user_id`: Requesting student
+- `room_id`: Requested room
+- `bed_id`: Specific bed (optional)
+- `status`: pending/approved/rejected
+- `rejection_reason`: If rejected
+- `requested_at`: Timestamp
+- `approved_at`: Approval timestamp
+- `approved_by`: Admin who approved
+
+### Relationships:
+- `user()`: belongsTo User
+- `room()`: belongsTo Room
+- `bed()`: belongsTo Bed
+
+### Scopes:
+- `pending()`: Only pending requests
+- `approved()`: Only approved requests
+
+**Why Important**: Workflow management for room allocation
+
+---
+
+## 5. Fee.php
+**Table**: `fees`
+
+### Fillable Fields:
+- `user_id`: Student owing fee
+- `amount`: Fee amount
+- `due_date`: Payment deadline
+- `status`: pending/paid/overdue
+- `type`: Fee category (rent/maintenance/deposit)
+- `description`: Fee details
+
+### Relationships:
+- `user()`: belongsTo User
+- `payments()`: hasMany Payment
+
+**Why Important**: Financial tracking and billing
+
+---
+
+## 6. Complaint.php
+**Table**: `complaints`
+
+### Fillable Fields:
+- `user_id`: Complainant
+- `category`: Type (maintenance/cleanliness/noise/other)
+- `subject`: Brief title
+- `description`: Detailed complaint
+- `status`: open/in-progress/resolved
+- `priority`: low/medium/high
+- `response`: Admin's reply
+- `resolved_at`: Resolution timestamp
+
+### Relationships:
+- `user()`: belongsTo User
+
+**Why Important**: Issue tracking and service quality
+
+---
+
+## 7. Feedback.php
+**Table**: `feedback`
+
+### Fillable Fields:
+- `user_id`: Feedback provider
+- `cleanliness_rating`: 1-5 stars
+- `food_rating`: 1-5 stars
+- `staff_rating`: 1-5 stars
+- `facilities_rating`: 1-5 stars
+- `safety_rating`: 1-5 stars
+- `comments`: Text feedback
+- `status`: pending/reviewed/addressed
+
+### Relationships:
+- `user()`: belongsTo User
+
+### Scopes:
+- `pending()`: Unreviewed feedback
+
+### Methods:
+- `averageRating()`: Calculate overall rating
+
+**Why Important**: Quality metrics and improvement insights
+
+---
+
+## 8. Notice.php
+**Table**: `notices`
+
+### Fillable Fields:
+- `title`: Notice headline
+- `content`: Full notice text
+- `audience`: all/students/visitors
+- `priority`: normal/important/urgent
+- `created_by`: Admin who posted
+- `published_at`: Publication date
+
+### Relationships:
+- `author()`: belongsTo User (admin)
+
+**Why Important**: Communication and announcements
+
+---
+
+## 9. Attendance.php
+**Table**: `attendance`
+
+### Fillable Fields:
+- `user_id`: Student
+- `date`: Attendance date
+- `status`: present/absent/leave
+- `remarks`: Notes
+
+### Relationships:
+- `user()`: belongsTo User
+
+### Unique Constraint:
+- `user_id` + `date` (one record per student per day)
+
+**Why Important**: Presence tracking and reporting
+
+---
+
+## 10. Payment.php
+**Table**: `payments`
+
+### Fillable Fields:
+- `fee_id`: Related fee
+- `amount`: Payment amount
+- `payment_method`: cash/card/upi/online
+- `transaction_id`: Reference number
+- `paid_at`: Payment timestamp
+
+### Relationships:
+- `fee()`: belongsTo Fee
+
+**Why Important**: Payment history and reconciliation
+
+---
+
+## Common Eloquent Features Used
+
+### Mass Assignment Protection
+All models have `$fillable` array defining which fields can be mass-assigned:
+```php
+protected $fillable = ['field1', 'field2'];
+```
+
+### Timestamps
+Auto-managed `created_at` and `updated_at` on all models
+
+### Soft Deletes
+Some models use soft deletes (deleted_at) instead of permanent deletion
+
+### Accessors/Mutators
+Custom getters/setters for computed attributes:
+```php
+public function getFullNameAttribute() {
+    return $this->first_name . ' ' . $this->last_name;
+}
+```
+
+### Query Scopes
+Reusable query filters:
+```php
+public function scopePending($query) {
+    return $query->where('status', 'pending');
+}
+// Usage: RoomRequest::pending()->get();
+```
+
+### Relationships
+Define table connections:
+- `hasMany`: One-to-many (User has many Fees)
+- `belongsTo`: Inverse of hasMany (Fee belongs to User)
+- `hasOne`: One-to-one (Bed has one User)
+- `belongsToMany`: Many-to-many (with pivot table)
+
+**Why Models are Important**: 
+- Data integrity through validation
+- Relationship management
+- Reusable business logic
+- Database abstraction
+- Security through mass assignment protection

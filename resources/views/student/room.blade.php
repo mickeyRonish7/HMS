@@ -1,0 +1,48 @@
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('My Room Details') }}
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6 bg-white border-b border-gray-200">
+                    @if($room)
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h3 class="text-2xl font-bold text-gray-900 mb-4">Room {{ $room->room_number }}</h3>
+                                <div class="bg-indigo-50 p-4 rounded-md mb-4">
+                                    <p class="text-sm text-gray-500">Room Type</p>
+                                    <p class="font-bold text-lg text-indigo-700 capitalize">{{ $room->type }}</p>
+                                </div>
+                                 <div class="bg-green-50 p-4 rounded-md">
+                                    <p class="text-sm text-gray-500">Your Bed</p>
+                                    <p class="font-bold text-lg text-green-700">Bed #{{ $bed->bed_number }}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-center bg-gray-50 rounded-lg p-8">
+                                <div class="text-center">
+                                    <svg class="h-24 w-24 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                    </svg>
+                                    <p class="text-gray-500">You are currently assigned to this room.</p>
+                                    <p class="text-sm text-gray-400 mt-2">Capacity: {{ $room->capacity }} Students</p>
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                        <div class="text-center py-10">
+                            <svg class="h-16 w-16 text-yellow-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <h3 class="text-xl font-bold text-gray-900">No Room Assigned</h3>
+                            <p class="text-gray-500 mt-2">You have not been assigned a room yet. Please contact the warden or administrator.</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout>

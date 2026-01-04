@@ -1,0 +1,319 @@
+# Controllers Documentation - HMSV2
+
+## What are Controllers?
+Controllers handle the business logic of the application. They receive requests from routes, process data, interact with models, and return views or responses.
+
+## Location
+`app/Http/Controllers/`
+
+---
+
+## 1. AdminController.php
+**Purpose**: Handles all admin-specific functionalities
+
+### Methods:
+- `dashboard()`: Show admin dashboard with stats (total students, rooms, occupancy, pending fees, etc.)
+- `pendingUsers()`: List users awaiting approval (students and visitors)
+- `approveUser($user)`: Approve a user registration
+  - For visitors: Sets `admin_approved = true`
+  - For students: Sets `is_approved = true`
+- `rejectUser($user)`: Delete/reject a user registration
+- `students()`: List all approved students with bed assignments
+- `showStudentProfile($id)`: View detailed student profile
+- `assignRoomForm($id)`: Show form to assign room to student
+- `assignRoom($request, $id)`: Process room assignment
+  - Frees old bed if student had one
+  - Assigns new bed and marks it occupied
+- `unassignRoom($id)`: Remove room assignment from student
+- `profile()`: Show admin's own profile
+- `updateProfile($request)`: Update admin profile information
+
+**Why Important**: Central hub for administrative tasks and user management
+
+---
+
+## 2. AuthController.php
+**Purpose**: Handles user authentication and registration
+
+### Methods:
+- `showLoginForm()`: Display login page
+- `login($request)`: Process login attempt
+  - Validates credentials
+  - Checks approval status (visitors need both student AND admin approval)
+  - Regenerates session on success
+- `register($request)`: Process new user registration
+  - Validates input (student-specific fields conditional)
+  - Creates user with appropriate approval fields
+  - For visitors: Sets both `student_approved` and `admin_approved` to false
+  - For students: Sets `is_approved` to false
+- `logout($request)`: Log out user and invalidate session
+- `updatePassword($request)`: Allow users to change password
+- `showRegisterForm()`: Display registration page
+
+**Special Logic**:
+
+- Visitor approval check:
+  ```
+  if visitor AND (!student_approved OR !admin_approved):
+      logout and show error with missing approvals
+  ```
+- Student approval check:
+  ```
+  if student AND !is_approved:
+      logout and show "pending admin approval" error
+  ```
+
+**Why Important**: Gateway to the system, ensures only approved users can access
+
+---
+
+## 3. StudentController.php
+**Purpose**: Handles student-specific functionalities
+
+### Methods:
+- `dashboard()`: Student dashboard showing notices, room info, due fees
+- `profile()`: Show student profile
+- `updateProfile($request)`: Update student profile and photo
+- `room()`: Show student's assigned room details
+- `fees()`: List student's fee records and payments
+- `pendingVisitors()`: List ALL visitor requests for approval
+  - Shows approved, rejected, and pending visitors
+  - Query: `where('role', 'visitor')->where('is_approved', false)`
+- `approveVisitor($id)`: Approve a visitor request
+  - Sets `student_approved = true`
+  - Clears any previous rejection data
+- `rejectVisitor($request, $id)`: Reject visitor with reason
+  - Validates reason (10-500 characters required)
+  - Sets `student_approved = false`
+  - Stores `rejection_reason` and `rejected_by = 'student'`
+
+**Why Important**: Student interface for accommodation and visitor management
+
+---
+
+## 4. RoomController.php
+**Purpose**: Manages rooms, beds, and room requests
+
+### Methods:
+- `index()`: List all rooms (admin view)
+- `create()`: Show room creation form
+- `store($request)`: Create new room with photo upload
+- `show($id)`: Display single room details
+- `edit($id)`: Show room edit form
+- `update($request, $id)`: Update room information
+- `destroy($id)`: Delete a room
+- `browse($request)`: Student room browsing with filtering
+  - Accepts `type` parameter (Standard, Deluxe, etc.)
+  - Shows available rooms with photos
+- `requestRoom($request)`: Submit room request (STUDENTS ONLY)
+  - Checks if user is student role
+  - Validates bed_id if provided
+  - Creates room request with status 'pending'
+- `myRequests()`: Show student's own room requests
+- `showRequests()`: Admin view of all room requests
+- `approveRequest($id, $request)`: Admin approval of room request
+  - Finds available bed (auto-assign if not specified)
+  - Marks bed as occupied
+  - Updates user's bed_id
+  - Changes request status to 'approved'
+- `rejectRequest($id, $request)`: Admin rejection with reason
+
+**Authorization**: Only students can request rooms (checked in `requestRoom()`)
+
+**Why Important**: Core functionality for room allocation and management
+
+---
+
+## 5. FeedbackController.php
+**Purpose**: Handles student feedback and admin analytics
+
+### Methods:
+- `index()`: Admin view of all feedback submissions
+- `create()`: Show feedback form to students
+- `store($request)`: Save feedback submission
+  - Ratings for cleanliness, food, staff, facilities, safety
+  - Optional comments
+- `show($id)`: View single feedback details
+- `update($request, $id)`: Update feedback status (pending/reviewed/addressed)
+- `analytics()`: Admin analytics dashboard
+  - Calculates average ratings for each category
+  - Rating distribution (5-star breakdown)
+  - Satisfaction distribution (Excellent/Good/Average/Poor)
+  - Trends over time
+  - Status breakdown
+
+**Why Important**: Quality monitoring and continuous improvement
+
+---
+
+## 6. ComplaintController.php
+**Purpose**: Manages student complaints
+
+### Methods:
+- `index()`: List complaints (filtered by role)
+  - Admin sees all
+  - Students see only their own
+- `create()`: Show complaint submission form
+- `store($request)`: Submit new complaint
+- `show($id)`: View complaint details
+- `update($request, $id)`: Admin updates status and response
+
+**Statuses**: open, in-progress, resolved
+
+**Why Important**: Issue tracking and resolution system
+
+---
+
+## 7. FeeController.php
+**Purpose**: Fee management and tracking
+
+### Methods:
+- `index()`: List fees (admin sees all, students see their own)
+- `create()`: Admin creates fee assignment
+- `store($request)`: Save fee record
+- `show($id)`: View fee details
+- `update($request, $id)`: Update fee status/amount
+- `destroy($id)`: Delete fee record
+
+**Why Important**: Financial tracking for hostel operations
+
+---
+
+## 8. NoticeController.php
+**Purpose**: Announcement management
+
+### Methods:
+- `index()`: List all notices
+- `create()`: Show notice creation form
+- `store($request)`: Post new notice
+  - Title, content, audience (all/students/visitors)
+- `edit($id)`: Edit notice
+- `update($request, $id)`: Update notice
+- `destroy($id)`: Delete notice
+
+**Why Important**: Communication channel for announcements
+
+---
+
+## 9. IDCardController.php
+**Purpose**: Student ID card generation
+
+### Methods:
+- `show()`: Display student's own ID card
+- `download()`: Generate PDF of ID card
+- `showStudentIDCard($id)`: Admin view of any student's ID card
+- `edit($id)`: Admin edits ID card details
+- `update($request, $id)`: Save ID card changes
+  - Student ID number, issue/expiry dates
+  - Blood group, emergency contact
+
+**Uses**: Barryvdh\DomPDF for PDF generation
+
+**Why Important**: Official identification for students
+
+---
+
+## 10. AttendanceController.php
+**Purpose**: Daily attendance tracking
+
+### Methods:
+- `index()`: Admin attendance dashboard
+- `studentIndex()`: Student's own attendance view
+- `store($request)`: Mark attendance for date
+- `export()`: Export attendance to CSV/Excel
+
+**Why Important**: Regulatory compliance and student tracking
+
+---
+
+## 11. VisitorController.php
+**Purpose**: Visitor log management
+
+### Methods:
+- `index()`: List visitor logs
+- `store($request)`: Log new visitor entry
+- `update($request, $id)`: Update visitor record
+
+**Why Important**: Security and visitor tracking
+
+---
+
+## 12. VisitorDashboardController.php
+**Purpose**: Visitor-specific dashboard
+
+### Methods:
+- `dashboard()`: Visitor homepage
+- `requestVisit($request)`: Submit visit request
+
+**Why Important**: Limited interface for visitor role
+
+---
+
+## 13. ChatbotController.php
+**Purpose**: AI chatbot functionality
+
+### Methods:
+- `ask($request)`: Process chatbot queries
+  - Uses pattern matching or AI service
+  - Returns contextual responses
+
+**Why Important**: 24/7 automated assistance
+
+---
+
+## 14. ThemeController.php
+**Purpose**: User preferences
+
+### Methods:
+- `toggleTheme()`: Switch between light/dark mode
+- `changeFontSize($request)`: Adjust text size
+- `changeLocale($locale)`: Switch language
+
+**Why Important**: Accessibility and user experience
+
+---
+
+## 15. NotificationController.php
+**Purpose**: In-app notifications
+
+### Methods:
+- `index()`: List user notifications
+- `markAsRead($id)`: Mark single notification as read
+- `markAllAsRead()`: Mark all as read
+- `destroy($id)`: Delete notification
+- `unreadCount()`: Get count for badge
+
+**Why Important**: Real-time updates and alerts
+
+---
+
+## Common Patterns
+
+### Authorization
+Most controllers check user role before showing/processing:
+```php
+if (Auth::user()->role !== 'student') {
+    abort(403);
+}
+```
+
+### Validation
+All form submissions use:
+```php
+$request->validate([
+    'field' => 'required|type|constraints'
+]);
+```
+
+### Flash Messages
+Success/error messages via session:
+```php
+return back()->with('success', 'Message');
+return back()->withErrors(['field' => 'Error']);
+```
+
+### Query Optimization
+Use eager loading to prevent N+1:
+```php
+->with('bed.room', 'fees', 'complaints')
+```

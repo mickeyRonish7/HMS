@@ -1,0 +1,87 @@
+# System Workflows Documentation - HMSV2
+
+## How the System Works (Step-by-Step)
+
+This file explains the "logic flow" of major features in the system.
+
+---
+
+## 1. Visitor Approval Flow (Two-Tier)
+
+**The Logic**: A visitor should not be able to enter the system until they are verified by both the host student and the warden/admin.
+
+1. **Registration**: Visitor fills the form -> `student_approved = 0`, `admin_approved = 0`.
+2. **Student Check**: Student logs in -> Goes to "Visitor Requests" -> Sees visitor details -> Clicks "Approve" or "Reject".
+   - If **Reject**: Student MUST provide a reason. Rejection is stored.
+   - If **Approve**: `student_approved` becomes 1.
+3. **Admin Check**: Admin logs in -> "Pending Users" -> Sees if student has already approved (Green checkmark) -> Clicks "Approve".
+4. **Visit Management**: Admin goes to "Visit Requests" -> Sees purpose, date, and student host for every request -> Can edit any request to correct data (name, date, purpose) or change the status manually.
+5. **Login**: visitor can only log in if `student_approved == 1` AND `admin_approved == 1`. 
+   - If they try earlier, they see a personalized error message telling them exactly who is yet to approve.
+
+---
+
+## 2. Room Booking & Bed Assignment
+
+**The Logic**: Students can pick a room, but the system ensures they don't pick a full room and handles the bed assignment automatically.
+
+1. **Browsing**: Student goes to "Browse Rooms" -> Filters by "Deluxe" or "Standard".
+2. **Requesting**: Student selects a room -> System checks availability -> Request created as "Pending".
+3. **Admin Verification**: Admin reviews the request.
+4. **Approval**: When Admin clicks "Approve":
+   - System finds the first `is_occupied = 0` bed in that room.
+   - Updates student's `bed_id`.
+   - Sets that bed's `is_occupied = 1`.
+   - Changes request status to "Approved".
+
+---
+
+## 3. ID Card Generation
+
+**The Logic**: Admin manages student data, and students get a printable official document.
+
+1. **Data Entry**: Admin goes to Student Profile -> "Edit ID Card Info" -> Sets ID number, Blood group, Expiry date.
+2. **Viewing**: Student logs in -> "ID Card" section.
+3. **Download**: Uses `DomPDF` library to convert the HTML view into a high-quality PDF.
+
+---
+
+## 4. Feedback & Analytics
+
+**The Logic**: Collect data to improve hostel life.
+
+1. **Submission**: Students rate 5 categories (Food, Staff, etc.).
+2. **Processing**: System calculates averages per category.
+3. **Visualization**: Admin sees "Feedback Analytics" -> `Chart.js` generates bars and pies showing satisfaction levels.
+
+---
+
+## 5. Middleware & Security
+
+**Why use Middleware?** To act as a "bouncer" at the door of every URL.
+
+- **`auth`**: Redirects to Login if you are a stranger.
+- **`verified`**: Ensures email is real.
+- **Role Middleware**: 
+  - If a student tries to access `/admin/rooms`, the middleware detects `user->role != 'admin'` and throws a 403 Forbidden error.
+  - This keeps the system secure from malicious students trying to change their own fees or approve their own visitors.
+
+---
+
+## 6. Language & Theme (Persistence)
+
+1. **Change**: User clicks "Toggle Dark Mode" or select "French".
+2. **Storage**: The preference is saved in the `users` table (`theme`, `locale`).
+3. **Usage**: Every time the user loads a page, the `AppServiceProvider` or `ThemeMiddleware` reads the database and applies the correct CSS classes and translation files.
+
+---
+
+## 7. Storage Handling (Photos)
+
+1. **Upload**: Admin/Student uploads a photo.
+2. **Path**: File is saved in `storage/app/public/`.
+3. **Visibility**: `php artisan storage:link` creates a shortcut in `public/storage` so the browser can see the images at `http://localhost:8000/storage/...`.
+
+---
+
+**Summary**: The system is designed for **Security** (Dual approval), **Automation** (Auto-bed assignment), and **Management** (Financials and ID cards).

@@ -1,0 +1,76 @@
+# Database Migrations Documentation - HMSV2
+
+## What are Migrations?
+Migrations are like version control for your database. They allow you to define and modify your database schema (tables, columns, indexes) in PHP code rather than writing manual SQL.
+
+## Location
+`database/migrations/`
+
+---
+
+## Core System Tables
+
+### 1. Users Table (`create_users_table.php`)
+**Purpose**: Stores all users (Admins, Students, Visitors).
+**Key Columns**:
+- `role`: Defines access level (admin, warden, student, visitor).
+- `phone`, `parent_phone`: Contact details.
+- `address`, `year`, `department`, `semester`: Specific to students.
+- `profile_photo_path`: For user avatars.
+
+### 2. Rooms Table (`create_rooms_table.php`)
+**Purpose**: Defines the physical rooms in the hostel.
+**Key Columns**:
+- `room_number`: Unique identifier.
+- `type`: Standard, Deluxe, VIP, etc.
+- `capacity`: Maximum number of people.
+- `floor`, `block`: Spatial location.
+- `rent`: Price per month.
+- `amenities`: JSON storage for facilities like WiFi, AC, etc.
+
+### 3. Beds Table (`create_beds_table.php`)
+**Purpose**: Tracks individual occupancy within a room.
+**Key Columns**:
+- `room_id`: Links to the parent room.
+- `bed_number`: Specific bed ID.
+- `is_occupied`: Boolean to check if a student is already assigned.
+
+### 4. Room Requests Table (`create_room_requests_table.php`)
+**Purpose**: Manages the workflow of students asking for rooms.
+**Key Columns**:
+- `status`: pending, approved, or rejected.
+- `rejection_reason`: Why a request was denied.
+
+### 5. Fees Table (`create_fees_table.php`)
+**Purpose**: Billing system for students.
+**Key Columns**:
+- `amount`, `due_date`, `status` (paid/unpaid).
+- `type`: Rent, Maintenance, etc.
+
+---
+
+## Evolution of the System (Recent Migrations)
+
+### 1. Add Dual Approval to Users (`add_dual_approval_to_users_table.php`)
+**Why used**: To separate the approval logic for visitors. 
+- `student_approved`: Logic for students to say "Yes, this is my guest."
+- `admin_approved`: Final security check by the admin.
+- This fixed the issue where visitors could log in without verification.
+
+### 2. Add Rejection to Users (`add_rejection_to_users_table.php`)
+**Why used**: To give transparency when a request is denied.
+- `rejection_reason`: Mandatory text from the student.
+- `rejected_by`: Tracks if it was rejected at the student or admin level.
+
+### 3. Add Student ID Number (`add_student_id_number_to_users_table.php`)
+**Why used**: To support the ID Card generation system.
+- Stores custom ID formats (e.g., HMS-2025-001).
+
+---
+
+## How to use Migrations
+1. **Apply Changes**: `php artisan migrate`
+2. **Rollback**: `php artisan migrate:rollback` (undoes the last step)
+3. **Fresh Start**: `php artisan migrate:fresh` (wipes database and restarts everything - BE CAREFUL with data loss).
+
+**Why Important**: It ensures everyone on the team has the exact same database structure and allows us to track schema changes over time.
